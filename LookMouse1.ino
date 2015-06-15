@@ -28,16 +28,19 @@
 */
 
 /* Set the delay between fresh samples */
-#define BNO055_SAMPLERATE_DELAY_MS (10)
+#define BNO055_SAMPLERATE_DELAY_MS (1)
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int ledPin = 13;
-const float deadZone = 2;
-const float moveMult[2] = {-1.0,1.0};
-//const float movePow[2] = {2.0,2.0};
+const float deadZone = 1;
+const float zeroBleed = 0.001;
+const float moveMult[2] = {-0.3,0.3};
+const float movePow[2] = {1.7,1.7};
+const float moveMax[2] = {80,80};
 
 float zero[3] = {0,0,0};
+int tick = 0;
 bool toZero = true;
 
 bool mouseOn = false;
@@ -75,6 +78,16 @@ float angleDiff(float targetA, float sourceA) {
   return a;
 }
 
+char weightedRound(float n) {
+//  float j = abs(n);
+//  char x = (char)j;
+//  if((j-x)*100.0 <= random(100)) {
+//    x++;
+//  }
+//  return x * (n<0?-1:1);
+  return (char)n;
+}
+
 /**************************************************************************/
 /*
     Arduino setup function (automatically called at startup)
@@ -108,6 +121,21 @@ void setup(void)
 /**************************************************************************/
 void loop(void) 
 {
+  tick++;
+  if(tick >= 100) tick = 0;
+  delay(BNO055_SAMPLERATE_DELAY_MS);
+  if (Serial.available() > 0) {
+    // read the incoming byte:
+    char incomingByte = Serial.read();
+    if(incomingByte == '!') toZero = true;
+    if(incomingByte == '.') {
+      mouseOn = !mouseOn;
+      toZero = true;
+    }
+  }
+  digitalWrite(ledPin,mouseOn ? HIGH : LOW);
+  if(!mouseOn) return;
+  
   /* Get a new sensor event */ 
   sensors_event_t event; 
   bno.getEvent(&event);
@@ -127,35 +155,27 @@ void loop(void)
          +----------+
   */
   
-  if (Serial.available() > 0) {
-    // read the incoming byte:
-    char incomingByte = Serial.read();
-    if(incomingByte == '!') toZero = true;
-    if(incomingByte == '.') {
-      mouseOn = !mouseOn;
-      toZero = true;
-    }
-  }
-  
   if(toZero) {
     doZero(orient);
     toZero = false;
   }
   
   float diff[3];
-  for(int i = 0; i < 3; i++)
+  for(int i = 0; i < 3; i++) {
     diff[i] = angleDiff(zero[i],orient[i]);
+//    zero[i] = (1.0-zeroBleed)*zero[i]+zeroBleed*orient[i];
+  }
     
   if(diff[0] > 100 || diff[0] < -100) toZero = true;
 
   /* The processing sketch expects data as roll, pitch, heading */
-  Serial.print(F("Orientation: "));
-  Serial.print(diff[0]);
-  Serial.print(F(" "));
-  Serial.print(diff[1]);
-  Serial.print(F(" "));
-  Serial.print(diff[2]);
-  Serial.println(F(""));
+//  Serial.print(F("Orientation: "));
+//  Serial.print(diff[0]);
+//  Serial.print(F(" "));
+//  Serial.print(diff[1]);
+//  Serial.print(F(" "));
+//  Serial.print(diff[2]);
+//  Serial.println(F(""));
   
   // compensate
   diff[0] += diff[1]*1.2;
@@ -164,14 +184,13 @@ void loop(void)
   float v;
   for(int i = 0; i < 2; i++) {
     if(diff[i] < -deadZone || diff[i] > deadZone) {
-      mov[i] = (char)(diff[i]*moveMult[i]);
+      v = constrain(pow(abs(diff[i]),movePow[i]), 0, moveMax[i]);
+      if(diff[i] < 0) v *= -1;
+      mov[i] = weightedRound(v*moveMult[i]);
     } else {
       mov[i] = 0;
     }
   }
-  if((mov[0] != 0 || mov[1] != 0) && mouseOn)
+  if(mov[0] != 0 || mov[1] != 0)
     Mouse.move(mov[0],mov[1]);
-  digitalWrite(ledPin,mouseOn ? HIGH : LOW);
-
-  delay(BNO055_SAMPLERATE_DELAY_MS);
 }
