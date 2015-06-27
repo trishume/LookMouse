@@ -33,10 +33,10 @@
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int ledPin = 13;
-const float deadZone = 1.0;
-const float zeroBleed = 0.001;
-const float moveMult[2] = {-0.3,0.3};
-const float movePow[2] = {1.7,1.7};
+const float deadZone = 0.1;
+const float zeroBleed = 0.1;
+const float moveMult[2] = {-20.0,20.0};
+const float movePow[2] = {1.2,1.2};
 const float moveMax[2] = {80,80};
 
 float zero[3] = {0,0,0};
@@ -72,20 +72,29 @@ void doZero(const float *point) {
   zero[2] = point[2];
 }
 
-float angleDiff(float targetA, float sourceA) {
-  float a = targetA - sourceA;
-  a += (a>180) ? -360 : (a<-180) ? 360 : 0;
-  return a;
+float angleDiff(float x, float y) {
+  return atan2(sin(x-y), cos(x-y));
+}
+
+inline float deg2Rad(float a) {
+  return (a*71.0)/4068.0;
+//  return a;
 }
 
 char weightedRound(float n) {
   float j = abs(n);
   char x = (char)j;
-  if((j-x)*100.0 <= random(100)) {
+  if((j-x)*10000.0 <= random(10000)) {
     x++;
   }
   return x * (n<0?-1:1);
 //  return (char)n;
+}
+
+float lowPassAngle(float a, float b, float weight) {
+  float x = cos(a) * weight + cos(b)*(1-weight);
+  float y = sin(a) * weight + sin(b)*(1-weight);
+  return atan2(y,x);
 }
 
 /**************************************************************************/
@@ -140,9 +149,9 @@ void loop(void)
   sensors_event_t event; 
   bno.getEvent(&event);
   float orient[3];
-  orient[0] = event.orientation.x;
-  orient[1] = event.orientation.y;
-  orient[2] = event.orientation.z;
+  orient[0] = deg2Rad(event.orientation.x);
+  orient[1] = deg2Rad(event.orientation.y);
+  orient[2] = deg2Rad(event.orientation.z);
   
   /* Board layout:
          +----------+
@@ -163,19 +172,19 @@ void loop(void)
   float diff[3];
   for(int i = 0; i < 3; i++) {
     diff[i] = angleDiff(zero[i],orient[i]);
-//    zero[i] = (1.0-zeroBleed)*zero[i]+zeroBleed*orient[i];
+//    zero[i] = lowPassAngle(zero[i],orient[i],zeroBleed);
   }
     
-  if(diff[0] > 100 || diff[0] < -100) toZero = true;
+//  if(diff[0] > 100 || diff[0] < -100) toZero = true;
 
   /* The processing sketch expects data as roll, pitch, heading */
-//  Serial.print(F("Orientation: "));
-//  Serial.print(diff[0]);
-//  Serial.print(F(" "));
-//  Serial.print(diff[1]);
-//  Serial.print(F(" "));
-//  Serial.print(diff[2]);
-//  Serial.println(F(""));
+  Serial.print(F("Orientation: "));
+  Serial.print(diff[0]);
+  Serial.print(F(" "));
+  Serial.print(diff[1]);
+  Serial.print(F(" "));
+  Serial.print(diff[2]);
+  Serial.println(F(""));
   
   // compensate
   diff[0] += diff[1]*1.2;
@@ -184,13 +193,16 @@ void loop(void)
   float v;
   for(int i = 0; i < 2; i++) {
     if(diff[i] < -deadZone || diff[i] > deadZone) {
-      v = constrain(pow(abs(diff[i]),movePow[i]), 0, moveMax[i]);
-      if(diff[i] < 0) v *= -1;
-      mov[i] = weightedRound(v*moveMult[i]);
+      float multed = diff[i]*moveMult[i];
+      v = constrain(pow(abs(multed),movePow[i]), 0, moveMax[i]);
+      if(multed < 0) v *= -1;
+      mov[i] = weightedRound(v);
     } else {
       mov[i] = 0;
     }
   }
   if(mov[0] != 0 || mov[1] != 0)
     Mouse.move(mov[0],mov[1]);
+  
+//  doZero(orient);
 }
