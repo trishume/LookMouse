@@ -33,7 +33,7 @@
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int ledPin = 13;
-const float deadZone = 1;
+const float deadZone = 1.0;
 const float zeroBleed = 0.001;
 const float moveMult[2] = {-0.3,0.3};
 const float movePow[2] = {1.7,1.7};
@@ -79,13 +79,13 @@ float angleDiff(float targetA, float sourceA) {
 }
 
 char weightedRound(float n) {
-//  float j = abs(n);
-//  char x = (char)j;
-//  if((j-x)*100.0 <= random(100)) {
-//    x++;
-//  }
-//  return x * (n<0?-1:1);
-  return (char)n;
+  float j = abs(n);
+  char x = (char)j;
+  if((j-x)*100.0 <= random(100)) {
+    x++;
+  }
+  return x * (n<0?-1:1);
+//  return (char)n;
 }
 
 /**************************************************************************/
