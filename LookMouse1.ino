@@ -34,7 +34,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int ledPin = 13;
 const float deadZone = 0.02;
-const float moveMult[2] = {-6.0,16.0};
+const float moveMult[2] = {-6.0,12.0};
 const float movePow[2] = {2.0,2.0};
 const float moveMax[2] = {50,50};
 
@@ -59,7 +59,7 @@ void displaySensorDetails(void)
   Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
   Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" xxx");
   Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" xxx");
-  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" xxx");  
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" xxx");
   Serial.println("------------------------------------");
   Serial.println("");
   delay(500);
