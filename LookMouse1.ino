@@ -35,10 +35,11 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 const int ledPin = 13;
 const float deadZone = 0.02;
 const float moveMult[2] = {-6.0,12.0};
-const float movePow[2] = {2.0,2.0};
-const float moveMax[2] = {50,50};
+const float movePow[2] = {3.0,3.0};
+const float moveMax[2] = {20,20};
 
 float diff[3] = {0,0,0};
+float zero[3] = {0,0,0};
 int tick = 0;
 bool toZero = true;
 
@@ -143,16 +144,12 @@ void loop(void)
   if(!mouseOn) return;
   
   /* Get a new sensor event */ 
-//  sensors_event_t event; 
-//  bno.getEvent(&event);
+  sensors_event_t event; 
+  bno.getEvent(&event);
   float orient[3];
-//  orient[0] = deg2Rad(event.orientation.x);
-//  orient[1] = deg2Rad(event.orientation.y);
-//  orient[2] = deg2Rad(event.orientation.z);
-  imu::Vector<3> rot = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-  orient[0] = rot[1];
-  orient[1] = rot[0];
-  orient[2] = rot[2];
+  orient[0] = deg2Rad(event.orientation.x);
+  orient[1] = deg2Rad(event.orientation.y);
+  orient[2] = deg2Rad(event.orientation.z);
   
   /* Board layout:
          +----------+
@@ -171,25 +168,27 @@ void loop(void)
 //  }
   
 
+  float vel[3];
   for(int i = 0; i < 3; i++) {
-//    diff[i] = angleDiff(zero[i],orient[i]);
+    vel[i] = angleDiff(zero[i],orient[i]);
+    zero[i] = orient[i];
 //    zero[i] = lowPassAngle(zero[i],orient[i],zeroBleed);
-      diff[i] = lowPass(diff[i], orient[i], 0.8);
+    diff[i] = lowPass(diff[i], vel[i]*100.0, 0.5);
   }
     
 //  if(diff[0] > 100 || diff[0] < -100) toZero = true;
 
   /* The processing sketch expects data as roll, pitch, heading */
-//  Serial.print(F("Orientation: "));
-//  Serial.print(diff[0]);
-//  Serial.print(F(" "));
-//  Serial.print(diff[1]);
-//  Serial.print(F(" "));
-//  Serial.print(diff[2]);
-//  Serial.println(F(""));
+  Serial.print(F("Orientation: "));
+  Serial.print(diff[0]);
+  Serial.print(F(" "));
+  Serial.print(diff[1]);
+  Serial.print(F(" "));
+  Serial.print(diff[2]);
+  Serial.println(F(""));
 //  
   // compensate
-//  diff[0] += diff[1]*1.2;
+  diff[0] += diff[1]*1.2;
   
   char mov[2];
   float v;
