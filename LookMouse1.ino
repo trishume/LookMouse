@@ -34,8 +34,8 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int ledPin = 13;
 const float deadZone = 0.02;
-const float moveMult[2] = {-6.0,12.0};
-const float movePow[2] = {3.0,3.0};
+const float moveMult[2] = {-8.0,13.0};
+const float movePow[2] = {3.3,3.3};
 const float moveMax[2] = {20,20};
 
 float diff[3] = {0,0,0};
@@ -161,11 +161,13 @@ void loop(void)
          |         *| VIN 
          +----------+
   */
-//  
-//  if(toZero) {
-//    doZero(orient);
-//    toZero = false;
-//  }
+  
+  if(toZero) {
+    for(int i = 0; i < 3; i++) {
+      zero[i] = orient[i];
+    }
+    toZero = false;
+  }
   
 
   float vel[3];
@@ -188,7 +190,7 @@ void loop(void)
   Serial.println(F(""));
 //  
   // compensate
-  diff[0] += diff[1]*1.2;
+  diff[0] += diff[1]*1.0;
   
   char mov[2];
   float v;
