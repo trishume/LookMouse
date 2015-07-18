@@ -188,15 +188,16 @@ void loop(void)
   Serial.print(F(" "));
   Serial.print(diff[2]);
   Serial.println(F(""));
-//  
-  // compensate
-  diff[0] += diff[1]*1.0;
+  
+  float vec[2];
+  vec[0] = diff[0]+diff[1]*1.0;
+  vec[1] = diff[1];
   
   char mov[2];
   float v;
   for(int i = 0; i < 2; i++) {
-    if(diff[i] < -deadZone || diff[i] > deadZone) {
-      float multed = diff[i]*moveMult[i];
+    if(vec[i] < -deadZone || vec[i] > deadZone) {
+      float multed = vec[i]*moveMult[i];
       v = constrain(pow(abs(multed),movePow[i]), 0, moveMax[i]);
       if(multed < 0) v *= -1;
       mov[i] = weightedRound(v);
