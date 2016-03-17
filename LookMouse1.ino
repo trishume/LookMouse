@@ -41,6 +41,7 @@ const float moveMax[2] = {20,20};
 float diff[3] = {0,0,0};
 float zero[3] = {0,0,0};
 int tick = 0;
+int credit = 0;
 bool toZero = true;
 
 bool mouseOn = false;
@@ -102,7 +103,7 @@ float lowPass(float a, float b, float w) {
 /**************************************************************************/
 void setup(void) 
 {
-  Serial.begin(115200);
+  Serial.begin(57600);
   Serial.println("Orientation Sensor Test"); Serial.println("");
   pinMode(ledPin, OUTPUT);
   
@@ -139,9 +140,14 @@ void loop(void)
       mouseOn = !mouseOn;
       toZero = true;
     }
+    if(incomingByte == '+') {
+      credit += 1000;
+    }
+    if(incomingByte == 'c') {
+      credit = 3000;
+    }
   }
   digitalWrite(ledPin,mouseOn ? HIGH : LOW);
-  if(!mouseOn) return;
   
   /* Get a new sensor event */ 
   sensors_event_t event; 
@@ -181,13 +187,25 @@ void loop(void)
 //  if(diff[0] > 100 || diff[0] < -100) toZero = true;
 
   /* The processing sketch expects data as roll, pitch, heading */
-  Serial.print(F("Orientation: "));
-  Serial.print(diff[0]);
-  Serial.print(F(" "));
-  Serial.print(diff[1]);
-  Serial.print(F(" "));
-  Serial.print(diff[2]);
-  Serial.println(F(""));
+//  Serial.print(F("Orientation: "));
+//  Serial.print(diff[0]);
+//  Serial.print(F(" "));
+//  Serial.print(diff[1]);
+//  Serial.print(F(" "));
+//  Serial.print(diff[2]);
+//  Serial.println(F(""));
+  if(credit > 0) {
+    Serial.print("{\"orient\": [");
+    Serial.print(orient[0], 5);
+    Serial.print(", ");
+    Serial.print(orient[1], 5);
+    Serial.print(", ");
+    Serial.print(orient[2], 5);
+    Serial.println("]}");
+    credit--;
+  }
+  
+  if(!mouseOn) return;
   
   float vec[2];
   vec[0] = diff[0]+diff[1]*1.0;
