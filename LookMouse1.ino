@@ -147,7 +147,7 @@ void loop(void)
       credit = 3000;
     }
   }
-  digitalWrite(ledPin,mouseOn ? HIGH : LOW);
+  digitalWrite(ledPin,(mouseOn || credit > 0) ? HIGH : LOW);
   
   /* Get a new sensor event */ 
   sensors_event_t event; 
