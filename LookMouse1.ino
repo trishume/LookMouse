@@ -28,7 +28,7 @@
 */
 
 /* Set the delay between fresh samples */
-#define BNO055_SAMPLERATE_DELAY_MS (1)
+#define BNO055_SAMPLERATE_DELAY_MS (5)
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
@@ -152,6 +152,20 @@ void loop(void)
   /* Get a new sensor event */ 
   sensors_event_t event; 
   bno.getEvent(&event);
+  
+  if(credit > 0) {
+    Serial.print("{\"orient\": [");
+    Serial.print(event.orientation.x, 5);
+    Serial.print(", ");
+    Serial.print(event.orientation.y, 5);
+    Serial.print(", ");
+    Serial.print(event.orientation.z, 5);
+    Serial.println("]}");
+    credit--;
+  }
+  
+  if(!mouseOn) return;
+  
   float orient[3];
   orient[0] = deg2Rad(event.orientation.x);
   orient[1] = deg2Rad(event.orientation.y);
@@ -194,18 +208,6 @@ void loop(void)
 //  Serial.print(F(" "));
 //  Serial.print(diff[2]);
 //  Serial.println(F(""));
-  if(credit > 0) {
-    Serial.print("{\"orient\": [");
-    Serial.print(orient[0], 5);
-    Serial.print(", ");
-    Serial.print(orient[1], 5);
-    Serial.print(", ");
-    Serial.print(orient[2], 5);
-    Serial.println("]}");
-    credit--;
-  }
-  
-  if(!mouseOn) return;
   
   float vec[2];
   vec[0] = diff[0]+diff[1]*1.0;
